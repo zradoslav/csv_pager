@@ -10,6 +10,7 @@
 #include <iostream>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp>
+#include <boost/tokenizer.hpp>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent), ui(new Ui::MainWindow)
@@ -57,7 +58,9 @@ void MainWindow::on_actionOpen_CSV_triggered()
     if(delim.isEmpty())
         return;
 
-    readCSV(path.toStdString(), delim.toStdString()[0]);
+    readCSV(path.toStdString(), delim.toStdString());
+    setupViews();
+    refreshViews();
 }
 
 void MainWindow::setupViews()
@@ -94,10 +97,9 @@ void MainWindow::refreshViews()
                        .arg(QString::number(csv.data.size())));
 }
 
-void MainWindow::readCSV(const std::string& path, char delim)
+void MainWindow::readCSV(const std::string& path, const std::string& delim_str)
 {
-    /* yet unstable */
-    char delim_str[1] = { delim };
+    char delim = delim_str[0];
 
     std::ifstream csvfile(path);
     if(!csvfile)
@@ -111,12 +113,55 @@ void MainWindow::readCSV(const std::string& path, char delim)
 
     std::string line;
     std::getline(csvfile, line);
+    /* here can be changed to tokenizer */
     boost::split(csv.header, line, boost::is_any_of(delim_str));
 
+#if 1
+    boost::escaped_list_separator<char> separator('\\', delim, '\"');
+
+    csv_t::string_v record;
+    std::string feed;
+
+    bool inside_quotes = false;
+    size_t last_quote = 0;
+
+    while(std::getline(csvfile, line))
+    {
+        /*
+         * deal with line breaks in quoted strings by SBHacker
+         * http://mybyteofcode.blogspot.com/2010/11/parse-csv-file-with-embedded-new-lines.html
+         */
+        last_quote = line.find_first_of('"');
+        while(last_quote != std::string::npos)
+        {
+            inside_quotes = !inside_quotes;
+            last_quote = line.find_first_of('"', last_quote + 1);
+        }
+
+        feed.append(line);
+
+        if(inside_quotes)
+        {
+            feed.push_back('\n');
+            continue;
+        }
+
+        boost::tokenizer<boost::escaped_list_separator<char>> tokenizer(feed, separator);
+        record.assign(tokenizer.begin(), tokenizer.end());
+
+        feed.clear(); // clear here, next check could fail
+
+        // checking for correctly parsed N fields per record
+        if(record.size() < csv.header.size())
+            continue;
+
+        csv.data.push_back(record);
+    }
+#else /* old csv processor */
     while(!csvfile.eof())
     {
         csv_t::string_v record;
-        while(record.size() != csv.header.size() - 1)
+        for(size_t i = 0; i < csv.header.size() - 1; i++)
         {
             std::getline(csvfile, line, delim);
             record.push_back(line);
@@ -126,9 +171,7 @@ void MainWindow::readCSV(const std::string& path, char delim)
 
         csv.data.push_back(record);
     }
-
-    setupViews();
-    refreshViews();
+#endif
 }
 
 void MainWindow::on_prevButton_clicked()
@@ -164,13 +207,5 @@ void MainWindow::on_actionAlways_on_Top_triggered(bool checked)
 
 void MainWindow::on_actionFix_window_triggered(bool checked)
 {
-    /* [issue] doesn't work */
-    QLayout* layout = this->layout();
-
-    if(checked)
-        layout->setSizeConstraint(QLayout::SetFixedSize);
-    else
-        layout->setSizeConstraint(QLayout::SetNoConstraint);
-
-    this->setLayout(layout);
+    /* TODO */
 }

@@ -42,11 +42,13 @@ private:
         string_v header;
         std::vector<string_v> data;
     } csv;
+
     unsigned page;
 
     std::vector<Viewer*> viewArray;
 
-    void readCSV(const std::string &path, char delim);
+    void readCSV(const std::string &path, const std::string &delim_str);
+    void readOptions();
     void setupViews();
     void refreshViews();
 };
