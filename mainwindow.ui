@@ -14,8 +14,35 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralWidget">
-   <layout class="QHBoxLayout" name="horizontalLayout">
-    <item>
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="5">
+     <widget class="QPushButton" name="nextButton">
+      <property name="text">
+       <string>&gt;</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="3">
+     <widget class="QLabel" name="pageLabel">
+      <property name="text">
+       <string>0/0</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="0">
+     <spacer name="horizontalSpacer">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>40</width>
+        <height>20</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item row="0" column="1">
      <widget class="QPushButton" name="prevButton">
       <property name="enabled">
        <bool>true</bool>
@@ -25,7 +52,20 @@
       </property>
      </widget>
     </item>
-    <item>
+    <item row="0" column="6">
+     <spacer name="horizontalSpacer_2">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>40</width>
+        <height>20</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item row="2" column="0" colspan="7">
      <widget class="QScrollArea" name="scrollArea">
       <property name="widgetResizable">
        <bool>true</bool>
@@ -38,18 +78,11 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>355</width>
-         <height>280</height>
+         <width>527</width>
+         <height>273</height>
         </rect>
        </property>
       </widget>
-     </widget>
-    </item>
-    <item>
-     <widget class="QPushButton" name="nextButton">
-      <property name="text">
-       <string>&gt;</string>
-      </property>
      </widget>
     </item>
    </layout>
@@ -80,10 +113,12 @@
    <addaction name="menuFile"/>
    <addaction name="menuView"/>
   </widget>
-  <widget class="QStatusBar" name="statusBar"/>
   <action name="actionOpen_CSV">
    <property name="text">
     <string>Open CSV…</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
    </property>
   </action>
   <action name="actionQuit">

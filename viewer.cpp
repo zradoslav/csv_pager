@@ -24,5 +24,17 @@ void Viewer::setContent(const QString &content)
 void Viewer::on_copyButton_clicked()
 {
     QClipboard* clip = QGuiApplication::clipboard();
-    clip->setText(this->ui->textEdit->toPlainText());
+    QString clipText = ui->textEdit->toPlainText();
+
+    if(copyWithQuots)
+    {
+        clipText.push_front('"');
+        clipText.push_back('"');
+    }
+    clip->setText(clipText);
+}
+
+void Viewer::on_quotBox_toggled(bool checked)
+{
+    copyWithQuots = checked;
 }

@@ -19,9 +19,12 @@ public:
 
 private slots:
     void on_copyButton_clicked();
+    void on_quotBox_toggled(bool checked);
 
 private:
     Ui::Viewer *ui;
+
+    bool copyWithQuots;
 };
 
 #endif // VIEWER_H

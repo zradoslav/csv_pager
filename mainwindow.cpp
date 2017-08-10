@@ -1,30 +1,23 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
-#include <QFileDialog>
 #include <QInputDialog>
 #include <QScrollArea>
-#include <QStatusBar>
 
 #include <fstream>
 #include <iostream>
-#include <boost/algorithm/string/split.hpp>
-#include <boost/algorithm/string/classification.hpp>
 #include <boost/tokenizer.hpp>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent), ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    this->setWindowTitle("csv_pager");
+    this->setWindowTitle("csv_pager - v0.0.3");
 
     viewWidget = new QWidget(this);
     verticalLayout = new QVBoxLayout(this);
     viewWidget->setLayout(verticalLayout);
     ui->scrollArea->setWidget(viewWidget);
-
-    pageLabel = new QLabel(this);
-    ui->statusBar->addWidget(pageLabel);
 
     ui->prevButton->setEnabled(false);
     ui->nextButton->setEnabled(false);
@@ -41,7 +34,6 @@ MainWindow::~MainWindow()
     }
     viewArray.clear();
 
-    delete pageLabel;
     delete verticalLayout;
     delete viewWidget;
     delete ui;
@@ -49,22 +41,33 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_actionOpen_CSV_triggered()
 {
-    QString path = QFileDialog::getOpenFileName(this, "Open CSV", QString(),
-                                                    "CSV (*.csv *.tsv *.txt)");
+//    QString path = QFileDialog::getOpenFileName(this, "Open CSV", QString(),
+//                                                    "CSV (*.csv *.tsv *.txt)");
+    FileDialog* dialog = new FileDialog(this);
+    if (!dialog->exec())
+        return;
+    QString path = dialog->selectedFiles().first();
+    bool default_delim = dialog->delimBox->isChecked();
     if(path.isEmpty())
         return;
 
-    QString delim = QInputDialog::getText(this, "Input delimiter", "Input delimiter:");
-    if(delim.isEmpty())
-        return;
+    QString delim_str;
+    if(!default_delim)
+    {
+        delim_str = QInputDialog::getText(this, "Input delimiter", "Input delimiter:");
+        if(delim_str.isEmpty())
+            return;
+    }
+    else
+        delim_str = ",";
 
-    readCSV(path.toStdString(), delim.toStdString());
+    readCSV(path.toStdString(), delim_str.toStdString()[0]);
     setupViews();
     refreshViews();
 }
 
 void MainWindow::setupViews()
-{
+{ 
     for(size_t i = 0; i < viewArray.size(); i++)
     {
         verticalLayout->removeWidget(viewArray[i]);
@@ -78,7 +81,7 @@ void MainWindow::setupViews()
         newView->setTitle(QString::fromStdString(csv.header[i]));
 
         verticalLayout->addWidget(newView);
-        viewArray.push_back(newView); // save for later use
+        viewArray.push_back(newView);
     }
 
     ui->prevButton->setEnabled(true);
@@ -89,18 +92,16 @@ void MainWindow::setupViews()
 
 void MainWindow::refreshViews()
 {
-    for(size_t i=0; i < viewArray.size(); i++)
+    for(size_t i = 0; i < viewArray.size(); i++)
         viewArray[i]->setContent(QString::fromStdString(csv.data[page][i]));
 
-    pageLabel->setText(QString("%1/%2")
-                       .arg(QString::number(page+1)) // human-like
+    ui->pageLabel->setText(QString("%1/%2")
+                       .arg(QString::number(page + 1)) // human-like
                        .arg(QString::number(csv.data.size())));
 }
 
-void MainWindow::readCSV(const std::string& path, const std::string& delim_str)
+void MainWindow::readCSV(const std::string& path, char delim)
 {
-    char delim = delim_str[0];
-
     std::ifstream csvfile(path);
     if(!csvfile)
     {
@@ -111,26 +112,23 @@ void MainWindow::readCSV(const std::string& path, const std::string& delim_str)
     csv.header.clear();
     csv.data.clear();
 
-    std::string line;
-    std::getline(csvfile, line);
-    /* here can be changed to tokenizer */
-    boost::split(csv.header, line, boost::is_any_of(delim_str));
-
-#if 1
     boost::escaped_list_separator<char> separator('\\', delim, '\"');
 
-    csv_t::string_v record;
-    std::string feed;
+    std::string line;
+    std::getline(csvfile, line);
+    boost::tokenizer<boost::escaped_list_separator<char>> tokenizer(line, separator);
+    csv.header.assign(tokenizer.begin(), tokenizer.end());
 
+    std::string feed;
     bool inside_quotes = false;
     size_t last_quote = 0;
 
     while(std::getline(csvfile, line))
     {
-        /*
+        /**
          * deal with line breaks in quoted strings by SBHacker
          * http://mybyteofcode.blogspot.com/2010/11/parse-csv-file-with-embedded-new-lines.html
-         */
+         **/
         last_quote = line.find_first_of('"');
         while(last_quote != std::string::npos)
         {
@@ -146,6 +144,7 @@ void MainWindow::readCSV(const std::string& path, const std::string& delim_str)
             continue;
         }
 
+        csv_t::string_v record;
         boost::tokenizer<boost::escaped_list_separator<char>> tokenizer(feed, separator);
         record.assign(tokenizer.begin(), tokenizer.end());
 
@@ -157,21 +156,6 @@ void MainWindow::readCSV(const std::string& path, const std::string& delim_str)
 
         csv.data.push_back(record);
     }
-#else /* old csv processor */
-    while(!csvfile.eof())
-    {
-        csv_t::string_v record;
-        for(size_t i = 0; i < csv.header.size() - 1; i++)
-        {
-            std::getline(csvfile, line, delim);
-            record.push_back(line);
-        }
-        std::getline(csvfile, line);
-        record.push_back(line);
-
-        csv.data.push_back(record);
-    }
-#endif
 }
 
 void MainWindow::on_prevButton_clicked()

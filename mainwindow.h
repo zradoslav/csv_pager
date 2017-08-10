@@ -2,12 +2,43 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QLabel>
 #include <QVBoxLayout>
+#include <QFileDialog>
+#include <QCheckBox>
 
 #include <vector>
 
 #include "viewer.h"
+
+class FileDialog : public QFileDialog
+{
+public:
+    FileDialog(QWidget *parent) :
+        QFileDialog(parent, "Open CSV", QString(), "CSV (*.csv *.tsv *.txt)")
+    {
+        this->setOption(QFileDialog::DontUseNativeDialog);
+
+        delimBox = new QCheckBox("Use default delimeter", this);
+        delimBox->setChecked(true);
+
+        QGridLayout* grid = dynamic_cast<QGridLayout*>(this->layout());
+        rowLayout = new QHBoxLayout(this);
+        rowLayout->addWidget(delimBox);
+
+        grid->addLayout(rowLayout, grid->rowCount(), 0, 1, -1);
+    }
+
+    ~FileDialog()
+    {
+        delete delimBox;
+        delete rowLayout;
+    }
+
+    QCheckBox* delimBox;
+
+private:
+    QHBoxLayout* rowLayout;
+};
 
 namespace Ui {
 class MainWindow;
@@ -32,7 +63,6 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
-    QLabel* pageLabel;
     QVBoxLayout* verticalLayout;
     QWidget* viewWidget;
 
@@ -47,7 +77,7 @@ private:
 
     std::vector<Viewer*> viewArray;
 
-    void readCSV(const std::string &path, const std::string &delim_str);
+    void readCSV(const std::string &path, char delim);
     void readOptions();
     void setupViews();
     void refreshViews();

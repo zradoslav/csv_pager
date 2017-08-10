@@ -16,16 +16,23 @@
   <property name="title">
    <string>GroupBox</string>
   </property>
-  <layout class="QHBoxLayout" name="horizontalLayout">
-   <item>
-    <widget class="QPlainTextEdit" name="textEdit"/>
-   </item>
-   <item>
+  <layout class="QGridLayout" name="gridLayout">
+   <item row="0" column="1">
     <widget class="QPushButton" name="copyButton">
      <property name="text">
       <string>Copy</string>
      </property>
     </widget>
+   </item>
+   <item row="1" column="1">
+    <widget class="QCheckBox" name="quotBox">
+     <property name="text">
+      <string>Quots</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0" rowspan="2">
+    <widget class="QPlainTextEdit" name="textEdit"/>
    </item>
   </layout>
  </widget>
