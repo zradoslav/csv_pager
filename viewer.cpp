@@ -1,7 +1,11 @@
 #include "viewer.h"
 #include "ui_viewer.h"
 
+#if QT_VERSION_MAJOR > 4
 #include <QGuiApplication>
+#else
+#include <QApplication>
+#endif
 #include <QClipboard>
 
 Viewer::Viewer(QWidget *parent) :
@@ -18,13 +22,17 @@ Viewer::~Viewer()
 
 void Viewer::setContent(const QString &content)
 {
-    ui->textEdit->setPlainText(content);
+    ui->resultText->setPlainText(content);
 }
 
 void Viewer::on_copyButton_clicked()
 {
+#if QT_VERSION_MAJOR > 4
     QClipboard* clip = QGuiApplication::clipboard();
-    QString clipText = ui->textEdit->toPlainText();
+#else
+    QClipboard* clip = QApplication::clipboard();
+#endif
+    QString clipText = ui->resultText->toPlainText();
 
     if(copyWithQuots)
     {

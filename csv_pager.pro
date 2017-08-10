@@ -11,17 +11,22 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = csv_pager
 TEMPLATE = app
 
-unix: QMAKE_CXXFLAGS += -Wall
+# Jaroševi
+unix: QMAKE_CXXFLAGS += -Wall -std=c++1y
+win32: INCLUDEPATH += C:/dev/boost_1_64_0
 
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
-        viewer.cpp
+        viewer.cpp \
+        fielddialog.cpp
 
 HEADERS += \
         mainwindow.h \
-        viewer.h
+        viewer.h \
+        fielddialog.h
 
 FORMS += \
         mainwindow.ui \
-        viewer.ui
+        viewer.ui \
+        fielddialog.ui

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>300</height>
+    <width>515</width>
+    <height>329</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,22 +17,35 @@
    <string>GroupBox</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="1">
+   <item row="3" column="1">
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="1" column="1">
     <widget class="QPushButton" name="copyButton">
      <property name="text">
       <string>Copy</string>
      </property>
     </widget>
    </item>
-   <item row="1" column="1">
+   <item row="2" column="1">
     <widget class="QCheckBox" name="quotBox">
      <property name="text">
       <string>Quots</string>
      </property>
     </widget>
    </item>
-   <item row="0" column="0" rowspan="2">
-    <widget class="QPlainTextEdit" name="textEdit"/>
+   <item row="0" column="0" rowspan="4">
+    <widget class="QPlainTextEdit" name="resultText"/>
    </item>
   </layout>
  </widget>

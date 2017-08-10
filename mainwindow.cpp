@@ -1,6 +1,8 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#include "fielddialog.h"
+
 #include <QInputDialog>
 #include <QScrollArea>
 
@@ -12,10 +14,10 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent), ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    this->setWindowTitle("csv_pager - v0.0.3");
+    this->setWindowTitle("csv_pager - v0.0.4");
 
     viewWidget = new QWidget(this);
-    verticalLayout = new QVBoxLayout(this);
+    verticalLayout = new QVBoxLayout();
     viewWidget->setLayout(verticalLayout);
     ui->scrollArea->setWidget(viewWidget);
 
@@ -41,13 +43,9 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_actionOpen_CSV_triggered()
 {
-//    QString path = QFileDialog::getOpenFileName(this, "Open CSV", QString(),
-//                                                    "CSV (*.csv *.tsv *.txt)");
-    FileDialog* dialog = new FileDialog(this);
-    if (!dialog->exec())
-        return;
-    QString path = dialog->selectedFiles().first();
-    bool default_delim = dialog->delimBox->isChecked();
+    auto result = CSVFileDialog::getChoices(this);
+    QString path = std::get<0>(result);
+    bool default_delim = std::get<1>(result);
     if(path.isEmpty())
         return;
 
@@ -62,6 +60,7 @@ void MainWindow::on_actionOpen_CSV_triggered()
         delim_str = ",";
 
     readCSV(path.toStdString(), delim_str.toStdString()[0]);
+    filterCSV();
     setupViews();
     refreshViews();
 }
@@ -80,8 +79,8 @@ void MainWindow::setupViews()
         auto newView = new Viewer(this);
         newView->setTitle(QString::fromStdString(csv.header[i]));
 
-        verticalLayout->addWidget(newView);
         viewArray.push_back(newView);
+        verticalLayout->addWidget(viewArray.back());
     }
 
     ui->prevButton->setEnabled(true);
@@ -92,6 +91,7 @@ void MainWindow::setupViews()
 
 void MainWindow::refreshViews()
 {
+    /* Qt4 version has encoding issues */
     for(size_t i = 0; i < viewArray.size(); i++)
         viewArray[i]->setContent(QString::fromStdString(csv.data[page][i]));
 
@@ -102,6 +102,8 @@ void MainWindow::refreshViews()
 
 void MainWindow::readCSV(const std::string& path, char delim)
 {
+    using boost_tokenizer = boost::tokenizer<boost::escaped_list_separator<char>>;
+
     std::ifstream csvfile(path);
     if(!csvfile)
     {
@@ -116,7 +118,7 @@ void MainWindow::readCSV(const std::string& path, char delim)
 
     std::string line;
     std::getline(csvfile, line);
-    boost::tokenizer<boost::escaped_list_separator<char>> tokenizer(line, separator);
+    boost_tokenizer tokenizer(line, separator);
     csv.header.assign(tokenizer.begin(), tokenizer.end());
 
     std::string feed;
@@ -125,10 +127,8 @@ void MainWindow::readCSV(const std::string& path, char delim)
 
     while(std::getline(csvfile, line))
     {
-        /**
-         * deal with line breaks in quoted strings by SBHacker
-         * http://mybyteofcode.blogspot.com/2010/11/parse-csv-file-with-embedded-new-lines.html
-         **/
+        // deal with line breaks in quoted strings by SBHacker
+        // http://mybyteofcode.blogspot.com/2010/11/parse-csv-file-with-embedded-new-lines.html
         last_quote = line.find_first_of('"');
         while(last_quote != std::string::npos)
         {
@@ -145,7 +145,7 @@ void MainWindow::readCSV(const std::string& path, char delim)
         }
 
         csv_t::string_v record;
-        boost::tokenizer<boost::escaped_list_separator<char>> tokenizer(feed, separator);
+        boost_tokenizer tokenizer(feed, separator);
         record.assign(tokenizer.begin(), tokenizer.end());
 
         feed.clear(); // clear here, next check could fail
@@ -158,6 +158,23 @@ void MainWindow::readCSV(const std::string& path, char delim)
     }
 }
 
+void MainWindow::filterCSV()
+{
+    auto index_filter = FieldDialog::getFieldList(csv.header, this);
+    if(index_filter.size() == csv.header.size())
+        return;
+
+    std::sort(index_filter.begin(), index_filter.end(), std::greater<size_t>());
+    for(auto& index : index_filter)
+    {
+        csv.header.erase(csv.header.begin() + index);
+        for(auto& record : csv.data)
+            record.erase(record.begin() + index);
+    }
+}
+
+/* signals & slots */
+
 void MainWindow::on_prevButton_clicked()
 {
     if(page > 0)
@@ -169,7 +186,7 @@ void MainWindow::on_prevButton_clicked()
 
 void MainWindow::on_nextButton_clicked()
 {
-    if(page < csv.data.size()-1)
+    if(page < csv.data.size() - 1)
     {
         ++page;
         refreshViews();
@@ -192,4 +209,5 @@ void MainWindow::on_actionAlways_on_Top_triggered(bool checked)
 void MainWindow::on_actionFix_window_triggered(bool checked)
 {
     /* TODO */
+    static_cast<void>(checked);
 }

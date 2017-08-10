@@ -6,14 +6,12 @@
 #include <QFileDialog>
 #include <QCheckBox>
 
-#include <vector>
-
 #include "viewer.h"
 
-class FileDialog : public QFileDialog
+class CSVFileDialog : private QFileDialog
 {
-public:
-    FileDialog(QWidget *parent) :
+private:
+    CSVFileDialog(QWidget *parent) :
         QFileDialog(parent, "Open CSV", QString(), "CSV (*.csv *.tsv *.txt)")
     {
         this->setOption(QFileDialog::DontUseNativeDialog);
@@ -22,22 +20,31 @@ public:
         delimBox->setChecked(true);
 
         QGridLayout* grid = dynamic_cast<QGridLayout*>(this->layout());
-        rowLayout = new QHBoxLayout(this);
+        rowLayout = new QHBoxLayout();
         rowLayout->addWidget(delimBox);
 
         grid->addLayout(rowLayout, grid->rowCount(), 0, 1, -1);
     }
 
-    ~FileDialog()
+    ~CSVFileDialog()
     {
         delete delimBox;
         delete rowLayout;
     }
 
     QCheckBox* delimBox;
-
-private:
     QHBoxLayout* rowLayout;
+
+public:
+    static std::tuple<QString, bool> getChoices(QWidget* parent)
+    {
+        CSVFileDialog* dialog = new CSVFileDialog(parent);
+        if(dialog->exec())
+            return std::make_tuple(dialog->selectedFiles().first(),
+                                   dialog->delimBox->isChecked());
+        else
+            return std::make_tuple(QString(), true);
+    }
 };
 
 namespace Ui {
@@ -78,7 +85,8 @@ private:
     std::vector<Viewer*> viewArray;
 
     void readCSV(const std::string &path, char delim);
-    void readOptions();
+
+    void filterCSV();
     void setupViews();
     void refreshViews();
 };
